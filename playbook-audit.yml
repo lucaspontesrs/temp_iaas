@@ -1424,135 +1424,162 @@
       - no_reboot_needed
       - restrict_strategy
 
-
+    - name: Set suid_audit_rules fact
+      ansible.builtin.set_fact:
+        suid_audit_rules:
+        - rule: -a always,exit -F arch=b32 -S execve -C gid!=egid -F egid=0 -k setgid
+          regex: ^[\s]*-a[\s]+always,exit[\s]+-F[\s]+arch=b32[\s]+-S[\s]+execve[\s]+-C[\s]+gid!=egid[\s]+-F[\s]+egid=0[\s]+(?:-k[\s]+|-F[\s]+key=)[\S]+[\s]*$
+        - rule: -a always,exit -F arch=b64 -S execve -C gid!=egid -F egid=0 -k setgid
+          regex: ^[\s]*-a[\s]+always,exit[\s]+-F[\s]+arch=b64[\s]+-S[\s]+execve[\s]+-C[\s]+gid!=egid[\s]+-F[\s]+egid=0[\s]+(?:-k[\s]+|-F[\s]+key=)[\S]+[\s]*$
+        - rule: -a always,exit -F arch=b32 -S execve -C uid!=euid -F euid=0 -k setuid
+          regex: ^[\s]*-a[\s]+always,exit[\s]+-F[\s]+arch=b32[\s]+-S[\s]+execve[\s]+-C[\s]+uid!=euid[\s]+-F[\s]+euid=0[\s]+(?:-k[\s]+|-F[\s]+key=)[\S]+[\s]*$
+        - rule: -a always,exit -F arch=b64 -S execve -C uid!=euid -F euid=0 -k setuid
+          regex: ^[\s]*-a[\s]+always,exit[\s]+-F[\s]+arch=b64[\s]+-S[\s]+execve[\s]+-C[\s]+uid!=euid[\s]+-F[\s]+euid=0[\s]+(?:-k[\s]+|-F[\s]+key=)[\S]+[\s]*$
+      when:
+      - '"audit" in ansible_facts.packages'
+      - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+      tags:
+      - CCE-86402-5
+      - NIST-800-53-AC-6(9)
+      - NIST-800-53-AU-12(3)
+      - NIST-800-53-AU-7(a)
+      - NIST-800-53-AU-7(b)
+      - NIST-800-53-AU-8(b)
+      - NIST-800-53-CM-5(1)
+      - audit_rules_suid_privilege_function
+      - low_complexity
+      - low_disruption
+      - medium_severity
+      - no_reboot_needed
+      - restrict_strategy
 
     - name: Set auditd rules fact
       ansible.builtin.set_fact:
         suid_audit_rules:
-      - rule: '-a always,exit -F arch=b64 -S adjtimex -S settimeofday -k time-change'
-        regex: '^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+adjtimex\s+-S\s+settimeofday\s+-k\s+time-change\s*$'
-      - rule: '-a always,exit -F arch=b32 -S adjtimex -S settimeofday -S stime -k time-change'
-        regex: '^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+adjtimex\s+-S\s+settimeofday\s+-S\s+stime\s+-k\s+time-change\s*$'
-      - rule: '-a always,exit -F arch=b64 -S clock_settime -k time-change'
-        regex: '^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+clock_settime\s+-k\s+time-change\s*$'
-      - rule: '-a always,exit -F arch=b32 -S clock_settime -k time-change'
-        regex: '^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+clock_settime\s+-k\s+time-change\s*$'
-      - rule: '-w /etc/localtime -p wa -k time-change'
-        regex: '^\s*-w\s+/etc/localtime\s+-p\s+wa\s+-k\s+time-change\s*$'
-      # 5.2.5 Record Events That Modify User/Group Information
-      - rule: '-w /etc/group -p wa -k identity'
-        regex: '^\s*-w\s+/etc/group\s+-p\s+wa\s+-k\s+identity\s*$'
-      - rule: '-w /etc/passwd -p wa -k identity'
-        regex: '^\s*-w\s+/etc/passwd\s+-p\s+wa\s+-k\s+identity\s*$'
-      - rule: '-w /etc/gshadow -p wa -k identity'
-        regex: '^\s*-w\s+/etc/gshadow\s+-p\s+wa\s+-k\s+identity\s*$'
-      - rule: '-w /etc/shadow -p wa -k identity'
-        regex: '^\s*-w\s+/etc/shadow\s+-p\s+wa\s+-k\s+identity\s*$'
-      - rule: '-w /etc/security/opasswd -p wa -k identity'
-        regex: '^\s*-w\s+/etc/security/opasswd\s+-p\s+wa\s+-k\s+identity\s*$'
-      # 5.2.6 Record Events That Modify the System's Network Environment
-      - rule: '-a always,exit -F arch=b64 -S sethostname -S setdomainname -k system-locale'
-        regex: '^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+sethostname\s+-S\s+setdomainname\s+-k\s+system-locale\s*$'
-      - rule: '-a always,exit -F arch=b32 -S sethostname -S setdomainname -k system-locale'
-        regex: '^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+sethostname\s+-S\s+setdomainname\s+-k\s+system-locale\s*$'
-      - rule: '-w /etc/issue -p wa -k system-locale'
-        regex: '^\s*-w\s+/etc/issue\s+-p\s+wa\s+-k\s+system-locale\s*$'
-      - rule: '-w /etc/issue.net -p wa -k system-locale'
-        regex: '^\s*-w\s+/etc/issue.net\s+-p\s+wa\s+-k\s+system-locale\s*$'
-      - rule: '-w /etc/hosts -p wa -k system-locale'
-        regex: '^\s*-w\s+/etc/hosts\s+-p\s+wa\s+-k\s+system-locale\s*$'
-      - rule: '-w /etc/sysconfig/network -p wa -k system-locale'
-        regex: '^\s*-w\s+/etc/sysconfig/network\s+-p\s+wa\s+-k\s+system-locale\s*$'
-      - rule: '-w /etc/sysconfig/network-scripts/ -p wa -k system-locale'
-        regex: '^\s*-w\s+/etc/sysconfig/network-scripts/\s+-p\s+wa\s+-k\s+system-locale\s*$'
-      # 5.2.7 Record Events That Modify the System's Mandatory Access Controls
-      - rule: '-w /etc/selinux/ -p wa -k MAC-policy'
-        regex: '^\s*-w\s+/etc/selinux/\s+-p\s+wa\s+-k\s+MAC-policy\s*$'
-      - rule: '-w /usr/share/selinux/ -p wa -k MAC-policy'
-        regex: '^\s*-w\s+/usr/share/selinux/\s+-p\s+wa\s+-k\s+MAC-policy\s*$'
-      # 5.2.8 Collect Login and Logout Events
-      - rule: '-w /var/log/lastlog -p wa -k logins'
-        regex: '^\s*-w\s+/var/log/lastlog\s+-p\s+wa\s+-k\s+logins\s*$'
-      - rule: '-w /var/run/faillock/ -p wa -k logins'
-        regex: '^\s*-w\s+/var/run/faillock/\s+-p\s+wa\s+-k\s+logins\s*$'
-      # 5.2.9 Collect Session Initiation Information
-      - rule: '-w /var/run/utmp -p wa -k session'
-        regex: '^\s*-w\s+/var/run/utmp\s+-p\s+wa\s+-k\s+session\s*$'
-      - rule: '-w /var/log/wtmp -p wa -k logins'
-        regex: '^\s*-w\s+/var/log/wtmp\s+-p\s+wa\s+-k\s+logins\s*$'
-      - rule: '-w /var/log/btmp -p wa -k logins'
-        regex: '^\s*-w\s+/var/log/btmp\s+-p\s+wa\s+-k\s+logins\s*$'
-      # 5.2.10 Collect Discretionary Access Control Permission Modification Events
-      - rule: '-a always,exit -F arch=b64 -S chmod -S fchmod -S fchmodat -F auid>=500 -F auid!=4294967295 -k perm_mod'
-        regex: '^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+chmod\s+-S\s+fchmod\s+-S\s+fchmodat\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+perm_mod\s*$'
-      - rule: '-a always,exit -F arch=b32 -S chmod -S fchmod -S fchmodat -F auid>=500 -F auid!=4294967295 -k perm_mod'
-        regex: '^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+chmod\s+-S\s+fchmod\s+-S\s+fchmodat\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+perm_mod\s*$'
-      - rule: '-a always,exit -F arch=b64 -S chown -S fchown -S fchownat -S lchown -F auid>=500 -F auid!=4294967295 -k perm_mod'
-        regex: '^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+chown\s+-S\s+fchown\s+-S\s+fchownat\s+-S\s+lchown\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+perm_mod\s*$'
-      - rule: '-a always,exit -F arch=b32 -S chown -S fchown -S fchownat -S lchown -F auid>=500 -F auid!=4294967295 -k perm_mod'
-        regex: '^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+chown\s+-S\s+fchown\s+-S\s+fchownat\s+-S\s+lchown\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+perm_mod\s*$'
-      - rule: '-a always,exit -F arch=b64 -S setxattr -S lsetxattr -S fsetxattr -S removexattr -S lremovexattr -S fremovexattr -F auid>=500 -F auid!=4294967295 -k perm_mod'
-        regex: '^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+setxattr\s+-S\s+lsetxattr\s+-S\s+fsetxattr\s+-S\s+removexattr\s+-S\s+lremovexattr\s+-S\s+fremovexattr\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+perm_mod\s*$'
-      - rule: '-a always,exit -F arch=b32 -S setxattr -S lsetxattr -S fsetxattr -S removexattr -S lremovexattr -S fremovexattr -F auid>=500 -F auid!=4294967295 -k perm_mod'
-        regex: '^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+setxattr\s+-S\s+lsetxattr\s+-S\s+fsetxattr\s+-S\s+removexattr\s+-S\s+lremovexattr\s+-S\s+fremovexattr\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+perm_mod\s*$'
-      # 5.2.11 Collect Unsuccessful Unauthorized Access Attempts to Files
-      - rule: '-a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295 -k access'
-        regex: '^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+creat\s+-S\s+open\s+-S\s+openat\s+-S\s+truncate\s+-S\s+ftruncate\s+-F\s+exit=-EACCES\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+access\s*$'
-      - rule: '-a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295 -k access'
-        regex: '^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+creat\s+-S\s+open\s+-S\s+openat\s+-S\s+truncate\s+-S\s+ftruncate\s+-F\s+exit=-EACCES\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+access\s*$'
-      - rule: '-a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=500 -F auid!=4294967295 -k access'
-        regex: '^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+creat\s+-S\s+open\s+-S\s+openat\s+-S\s+truncate\s+-S\s+ftruncate\s+-F\s+exit=-EPERM\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+access\s*$'
-      - rule: '-a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=500 -F auid!=4294967295 -k access'
-        regex: '^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+creat\s+-S\s+open\s+-S\s+openat\s+-S\s+truncate\s+-S\s+ftruncate\s+-F\s+exit=-EPERM\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+access\s*$'
-      # 5.2.13 Collect Successful File System Mounts
-      - rule: '-a always,exit -F arch=b64 -S mount -F auid>=500 -F auid!=4294967295 -k mounts'
-        regex: '^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+mount\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+mounts\s*$'
-      - rule: '-a always,exit -F arch=b32 -S mount -F auid>=500 -F auid!=4294967295 -k mounts'
-        regex: '^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+mount\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+mounts\s*$'
-      # 5.2.14 Collect File Deletion Events by User
-      - rule: '-a always,exit -F arch=b64 -S unlink -S unlinkat -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete'
-        regex: '^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+unlink\s+-S\s+unlinkat\s+-S\s+rename\s+-S\s+renameat\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+delete\s*$'
-      - rule: '-a always,exit -F arch=b32 -S unlink -S unlinkat -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete'
-        regex: '^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+unlink\s+-S\s+unlinkat\s+-S\s+rename\s+-S\s+renameat\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+delete\s*$'
-      # 5.2.15 Collect Changes to System Administration Scope
-      - rule: '-w /etc/sudoers -p wa -k scope'
-        regex: '^\s*-w\s+/etc/sudoers\s+-p\s+wa\s+-k\s+scope\s*$'
-      - rule: '-w /etc/sudoers.d/ -p wa -k scope'
-        regex: '^\s*-w\s+/etc/sudoers.d/\s+-p\s+wa\s+-k\s+scope\s*$'
-      # 5.2.16 Collect System Administrator Actions
-      - rule: '-w /var/log/sudo.log -p wa -k actions'
-        regex: '^\s*-w\s+/var/log/sudo.log\s+-p\s+wa\s+-k\s+actions\s*$'
-      # 5.2.17 Collect Kernel Module Loading and Unloading
-      - rule: '-w /sbin/insmod -p x -k modules'
-        regex: '^\s*-w\s+/sbin/insmod\s+-p\s+x\s+-k\s+modules\s*$'
-      - rule: '-w /sbin/rmmod -p x -k modules'
-        regex: '^\s*-w\s+/sbin/rmmod\s+-p\s+x\s+-k\s+modules\s*$'
-      - rule: '-w /sbin/modprobe -p x -k modules'
-        regex: '^\s*-w\s+/sbin/modprobe\s+-p\s+x\s+-k\s+modules\s*$'
-      - rule: '-a always,exit -F arch=b64 -S init_module -S delete_module -k modules'
-        regex: '^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+init_module\s+-S\s+delete_module\s+-k\s+modules\s*$'
-      # Sudo execution monitoring
-      - rule: '-a always,exit -F arch=b64 -S execve -F euid=0 -F auid>=1000 -F auid!=-1 -F key=sudo_log'
-        regex: '^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+execve\s+-F\s+euid=0\s+-F\s+auid>=1000\s+-F\s+auid!=-1\s+-F\s+key=sudo_log\s*$'
-      - rule: '-a always,exit -F arch=b32 -S execve -F euid=0 -F auid>=1000 -F auid!=-1 -F key=sudo_log'
-        regex: '^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+execve\s+-F\s+euid=0\s+-F\s+auid>=1000\s+-F\s+auid!=-1\s+-F\s+key=sudo_log\s*$'
-      # Monitoring permission/ownership changes
-      - rule: '-w /usr/bin/chmod -p x -k chmod_rule'
-        regex: '^\s*-w\s+/usr/bin/chmod\s+-p\s+x\s+-k\s+chmod_rule\s*$'
-      - rule: '-w /usr/bin/chown -p x -k chown_rule'
-        regex: '^\s*-w\s+/usr/bin/chown\s+-p\s+x\s+-k\s+chown_rule\s*$'
-      # Yum/dnf monitoring
-      - rule: '-w /bin/yum -p x -k yum_rule'
-        regex: '^\s*-w\s+/bin/yum\s+-p\s+x\s+-k\s+yum_rule\s*$'
-      - rule: '-w /bin/dnf -p x -k yum_rule'
-        regex: '^\s*-w\s+/bin/dnf\s+-p\s+x\s+-k\s+yum_rule\s*$'
-      - rule: '-w /bin/wget -p x -k yum_rule'
-        regex: '^\s*-w\s+/bin/wget\s+-p\s+x\s+-k\s+yum_rule\s*$'
-      # Excluding CRYPTO_KEY_USER and CRYPTO_SESSION events
-      - rule: '-a always,exclude -F msgtype=CRYPTO_KEY_USER'
-        regex: '^\s*-a\s+always,exclude\s+-F\s+msgtype=CRYPTO_KEY_USER\s*$'
-      - rule: '-a always,exclude -F msgtype=CRYPTO_SESSION'
-        regex: '^\s*-a\s+always,exclude\s+-F\s+msgtype=CRYPTO_SESSION\s*$'
+        - rule: '-a always,exit -F arch=b64 -S adjtimex -S settimeofday -k time-change'
+          regex: '^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+adjtimex\s+-S\s+settimeofday\s+-k\s+time-change\s*$'
+        - rule: '-a always,exit -F arch=b32 -S adjtimex -S settimeofday -S stime -k time-change'
+          regex: '^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+adjtimex\s+-S\s+settimeofday\s+-S\s+stime\s+-k\s+time-change\s*$'
+        - rule: '-a always,exit -F arch=b64 -S clock_settime -k time-change'
+          regex: '^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+clock_settime\s+-k\s+time-change\s*$'
+        - rule: '-a always,exit -F arch=b32 -S clock_settime -k time-change'
+          regex: '^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+clock_settime\s+-k\s+time-change\s*$'
+        - rule: '-w /etc/localtime -p wa -k time-change'
+          regex: '^\s*-w\s+/etc/localtime\s+-p\s+wa\s+-k\s+time-change\s*$'
+        # 5.2.5 Record Events That Modify User/Group Information
+        - rule: '-w /etc/group -p wa -k identity'
+          regex: '^\s*-w\s+/etc/group\s+-p\s+wa\s+-k\s+identity\s*$'
+        - rule: '-w /etc/passwd -p wa -k identity'
+          regex: '^\s*-w\s+/etc/passwd\s+-p\s+wa\s+-k\s+identity\s*$'
+        - rule: '-w /etc/gshadow -p wa -k identity'
+          regex: '^\s*-w\s+/etc/gshadow\s+-p\s+wa\s+-k\s+identity\s*$'
+        - rule: '-w /etc/shadow -p wa -k identity'
+          regex: '^\s*-w\s+/etc/shadow\s+-p\s+wa\s+-k\s+identity\s*$'
+        - rule: '-w /etc/security/opasswd -p wa -k identity'
+          regex: '^\s*-w\s+/etc/security/opasswd\s+-p\s+wa\s+-k\s+identity\s*$'
+        # 5.2.6 Record Events That Modify the System's Network Environment
+        - rule: '-a always,exit -F arch=b64 -S sethostname -S setdomainname -k system-locale'
+          regex: '^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+sethostname\s+-S\s+setdomainname\s+-k\s+system-locale\s*$'
+        - rule: '-a always,exit -F arch=b32 -S sethostname -S setdomainname -k system-locale'
+          regex: '^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+sethostname\s+-S\s+setdomainname\s+-k\s+system-locale\s*$'
+        - rule: '-w /etc/issue -p wa -k system-locale'
+          regex: '^\s*-w\s+/etc/issue\s+-p\s+wa\s+-k\s+system-locale\s*$'
+        - rule: '-w /etc/issue.net -p wa -k system-locale'
+          regex: '^\s*-w\s+/etc/issue.net\s+-p\s+wa\s+-k\s+system-locale\s*$'
+        - rule: '-w /etc/hosts -p wa -k system-locale'
+          regex: '^\s*-w\s+/etc/hosts\s+-p\s+wa\s+-k\s+system-locale\s*$'
+        - rule: '-w /etc/sysconfig/network -p wa -k system-locale'
+          regex: '^\s*-w\s+/etc/sysconfig/network\s+-p\s+wa\s+-k\s+system-locale\s*$'
+        - rule: '-w /etc/sysconfig/network-scripts/ -p wa -k system-locale'
+          regex: '^\s*-w\s+/etc/sysconfig/network-scripts/\s+-p\s+wa\s+-k\s+system-locale\s*$'
+        # 5.2.7 Record Events That Modify the System's Mandatory Access Controls
+        - rule: '-w /etc/selinux/ -p wa -k MAC-policy'
+          regex: '^\s*-w\s+/etc/selinux/\s+-p\s+wa\s+-k\s+MAC-policy\s*$'
+        - rule: '-w /usr/share/selinux/ -p wa -k MAC-policy'
+          regex: '^\s*-w\s+/usr/share/selinux/\s+-p\s+wa\s+-k\s+MAC-policy\s*$'
+        # 5.2.8 Collect Login and Logout Events
+        - rule: '-w /var/log/lastlog -p wa -k logins'
+          regex: '^\s*-w\s+/var/log/lastlog\s+-p\s+wa\s+-k\s+logins\s*$'
+        - rule: '-w /var/run/faillock/ -p wa -k logins'
+          regex: '^\s*-w\s+/var/run/faillock/\s+-p\s+wa\s+-k\s+logins\s*$'
+        # 5.2.9 Collect Session Initiation Information
+        - rule: '-w /var/run/utmp -p wa -k session'
+          regex: '^\s*-w\s+/var/run/utmp\s+-p\s+wa\s+-k\s+session\s*$'
+        - rule: '-w /var/log/wtmp -p wa -k logins'
+          regex: '^\s*-w\s+/var/log/wtmp\s+-p\s+wa\s+-k\s+logins\s*$'
+        - rule: '-w /var/log/btmp -p wa -k logins'
+          regex: '^\s*-w\s+/var/log/btmp\s+-p\s+wa\s+-k\s+logins\s*$'
+        # 5.2.10 Collect Discretionary Access Control Permission Modification Events
+        - rule: '-a always,exit -F arch=b64 -S chmod -S fchmod -S fchmodat -F auid>=500 -F auid!=4294967295 -k perm_mod'
+          regex: '^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+chmod\s+-S\s+fchmod\s+-S\s+fchmodat\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+perm_mod\s*$'
+        - rule: '-a always,exit -F arch=b32 -S chmod -S fchmod -S fchmodat -F auid>=500 -F auid!=4294967295 -k perm_mod'
+          regex: '^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+chmod\s+-S\s+fchmod\s+-S\s+fchmodat\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+perm_mod\s*$'
+        - rule: '-a always,exit -F arch=b64 -S chown -S fchown -S fchownat -S lchown -F auid>=500 -F auid!=4294967295 -k perm_mod'
+          regex: '^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+chown\s+-S\s+fchown\s+-S\s+fchownat\s+-S\s+lchown\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+perm_mod\s*$'
+        - rule: '-a always,exit -F arch=b32 -S chown -S fchown -S fchownat -S lchown -F auid>=500 -F auid!=4294967295 -k perm_mod'
+          regex: '^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+chown\s+-S\s+fchown\s+-S\s+fchownat\s+-S\s+lchown\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+perm_mod\s*$'
+        - rule: '-a always,exit -F arch=b64 -S setxattr -S lsetxattr -S fsetxattr -S removexattr -S lremovexattr -S fremovexattr -F auid>=500 -F auid!=4294967295 -k perm_mod'
+          regex: '^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+setxattr\s+-S\s+lsetxattr\s+-S\s+fsetxattr\s+-S\s+removexattr\s+-S\s+lremovexattr\s+-S\s+fremovexattr\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+perm_mod\s*$'
+        - rule: '-a always,exit -F arch=b32 -S setxattr -S lsetxattr -S fsetxattr -S removexattr -S lremovexattr -S fremovexattr -F auid>=500 -F auid!=4294967295 -k perm_mod'
+          regex: '^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+setxattr\s+-S\s+lsetxattr\s+-S\s+fsetxattr\s+-S\s+removexattr\s+-S\s+lremovexattr\s+-S\s+fremovexattr\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+perm_mod\s*$'
+        # 5.2.11 Collect Unsuccessful Unauthorized Access Attempts to Files
+        - rule: '-a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295 -k access'
+          regex: '^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+creat\s+-S\s+open\s+-S\s+openat\s+-S\s+truncate\s+-S\s+ftruncate\s+-F\s+exit=-EACCES\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+access\s*$'
+        - rule: '-a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295 -k access'
+          regex: '^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+creat\s+-S\s+open\s+-S\s+openat\s+-S\s+truncate\s+-S\s+ftruncate\s+-F\s+exit=-EACCES\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+access\s*$'
+        - rule: '-a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=500 -F auid!=4294967295 -k access'
+          regex: '^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+creat\s+-S\s+open\s+-S\s+openat\s+-S\s+truncate\s+-S\s+ftruncate\s+-F\s+exit=-EPERM\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+access\s*$'
+        - rule: '-a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=500 -F auid!=4294967295 -k access'
+          regex: '^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+creat\s+-S\s+open\s+-S\s+openat\s+-S\s+truncate\s+-S\s+ftruncate\s+-F\s+exit=-EPERM\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+access\s*$'
+        # 5.2.13 Collect Successful File System Mounts
+        - rule: '-a always,exit -F arch=b64 -S mount -F auid>=500 -F auid!=4294967295 -k mounts'
+          regex: '^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+mount\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+mounts\s*$'
+        - rule: '-a always,exit -F arch=b32 -S mount -F auid>=500 -F auid!=4294967295 -k mounts'
+          regex: '^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+mount\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+mounts\s*$'
+        # 5.2.14 Collect File Deletion Events by User
+        - rule: '-a always,exit -F arch=b64 -S unlink -S unlinkat -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete'
+          regex: '^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+unlink\s+-S\s+unlinkat\s+-S\s+rename\s+-S\s+renameat\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+delete\s*$'
+        - rule: '-a always,exit -F arch=b32 -S unlink -S unlinkat -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete'
+          regex: '^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+unlink\s+-S\s+unlinkat\s+-S\s+rename\s+-S\s+renameat\s+-F\s+auid>=500\s+-F\s+auid!=4294967295\s+-k\s+delete\s*$'
+        # 5.2.15 Collect Changes to System Administration Scope
+        - rule: '-w /etc/sudoers -p wa -k scope'
+          regex: '^\s*-w\s+/etc/sudoers\s+-p\s+wa\s+-k\s+scope\s*$'
+        - rule: '-w /etc/sudoers.d/ -p wa -k scope'
+          regex: '^\s*-w\s+/etc/sudoers.d/\s+-p\s+wa\s+-k\s+scope\s*$'
+        # 5.2.16 Collect System Administrator Actions
+        - rule: '-w /var/log/sudo.log -p wa -k actions'
+          regex: '^\s*-w\s+/var/log/sudo.log\s+-p\s+wa\s+-k\s+actions\s*$'
+        # 5.2.17 Collect Kernel Module Loading and Unloading
+        - rule: '-w /sbin/insmod -p x -k modules'
+          regex: '^\s*-w\s+/sbin/insmod\s+-p\s+x\s+-k\s+modules\s*$'
+        - rule: '-w /sbin/rmmod -p x -k modules'
+          regex: '^\s*-w\s+/sbin/rmmod\s+-p\s+x\s+-k\s+modules\s*$'
+        - rule: '-w /sbin/modprobe -p x -k modules'
+          regex: '^\s*-w\s+/sbin/modprobe\s+-p\s+x\s+-k\s+modules\s*$'
+        - rule: '-a always,exit -F arch=b64 -S init_module -S delete_module -k modules'
+          regex: '^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+init_module\s+-S\s+delete_module\s+-k\s+modules\s*$'
+        # Sudo execution monitoring
+        - rule: '-a always,exit -F arch=b64 -S execve -F euid=0 -F auid>=1000 -F auid!=-1 -F key=sudo_log'
+          regex: '^\s*-a\s+always,exit\s+-F\s+arch=b64\s+-S\s+execve\s+-F\s+euid=0\s+-F\s+auid>=1000\s+-F\s+auid!=-1\s+-F\s+key=sudo_log\s*$'
+        - rule: '-a always,exit -F arch=b32 -S execve -F euid=0 -F auid>=1000 -F auid!=-1 -F key=sudo_log'
+          regex: '^\s*-a\s+always,exit\s+-F\s+arch=b32\s+-S\s+execve\s+-F\s+euid=0\s+-F\s+auid>=1000\s+-F\s+auid!=-1\s+-F\s+key=sudo_log\s*$'
+        # Monitoring permission/ownership changes
+        - rule: '-w /usr/bin/chmod -p x -k chmod_rule'
+          regex: '^\s*-w\s+/usr/bin/chmod\s+-p\s+x\s+-k\s+chmod_rule\s*$'
+        - rule: '-w /usr/bin/chown -p x -k chown_rule'
+          regex: '^\s*-w\s+/usr/bin/chown\s+-p\s+x\s+-k\s+chown_rule\s*$'
+        # Yum/dnf monitoring
+        - rule: '-w /bin/yum -p x -k yum_rule'
+          regex: '^\s*-w\s+/bin/yum\s+-p\s+x\s+-k\s+yum_rule\s*$'
+        - rule: '-w /bin/dnf -p x -k yum_rule'
+          regex: '^\s*-w\s+/bin/dnf\s+-p\s+x\s+-k\s+yum_rule\s*$'
+        - rule: '-w /bin/wget -p x -k yum_rule'
+          regex: '^\s*-w\s+/bin/wget\s+-p\s+x\s+-k\s+yum_rule\s*$'
+        # Excluding CRYPTO_KEY_USER and CRYPTO_SESSION events
+        - rule: '-a always,exclude -F msgtype=CRYPTO_KEY_USER'
+          regex: '^\s*-a\s+always,exclude\s+-F\s+msgtype=CRYPTO_KEY_USER\s*$'
+        - rule: '-a always,exclude -F msgtype=CRYPTO_SESSION'
+          regex: '^\s*-a\s+always,exclude\s+-F\s+msgtype=CRYPTO_SESSION\s*$'
 
 
 
